@@ -8,6 +8,12 @@ import { TooManyTransactionsError } from "../errors";
 import { mapAddr } from "../utils/map-addr";
 import { Controller } from "./controller";
 
+export interface BlockRequest extends Hapi.Request {
+    payload: {
+        block: Buffer;
+    };
+}
+
 export class BlocksController extends Controller {
     @Container.inject(Container.Identifiers.PluginConfiguration)
     @Container.tagged("plugin", "@solar-network/core-p2p")
@@ -19,12 +25,15 @@ export class BlocksController extends Controller {
     @Container.inject(Container.Identifiers.DatabaseService)
     private readonly database!: DatabaseService;
 
+    @Container.inject(Container.Identifiers.RoundState)
+    private readonly roundState!: Contracts.State.RoundState;
+
     @Container.inject(Container.Identifiers.WalletRepository)
     @Container.tagged("state", "blockchain")
     private readonly walletRepository!: Contracts.State.WalletRepository;
 
     public async postBlock(
-        request: Hapi.Request,
+        request: BlockRequest,
         h: Hapi.ResponseToolkit,
     ): Promise<{ status: boolean; height: number }> {
         const blockBuffer: Buffer = request.payload.block;
@@ -82,6 +91,22 @@ export class BlocksController extends Controller {
                 block.reward,
             )} reward :package:`,
         );
+
+        const { dynamicReward } = Managers.configManager.getMilestone();
+
+        if (dynamicReward && dynamicReward.enabled && block.reward.isEqualTo(dynamicReward.secondaryReward)) {
+            const { alreadyForged } = await this.roundState.getRewardForBlockInRound(block.height, generatorWallet);
+            if (
+                alreadyForged &&
+                !block.reward.isEqualTo(dynamicReward.ranks[generatorWallet.getAttribute("delegate.rank")])
+            ) {
+                this.logger.info(
+                    `The reward was reduced because ${generatorWallet.getAttribute(
+                        "delegate.username",
+                    )} already forged in this round :fire:`,
+                );
+            }
+        }
 
         this.logger.debug(`The id of the new block is ${block.id}`);
 

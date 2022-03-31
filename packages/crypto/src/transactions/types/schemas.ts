@@ -40,7 +40,7 @@ export const transactionBaseSchema: Record<string, any> = {
             maxItems: 16,
             additionalItems: false,
             uniqueItems: true,
-            items: { allOf: [{ minLength: 128, maxLength: 128 }, { $ref: "hex" }] },
+            items: { allOf: [{ minLength: 130, maxLength: 130 }, { $ref: "hex" }] },
         },
     },
 };
@@ -185,7 +185,7 @@ export const multiSignature = extend(transactionBaseSchema, {
             maxItems: { $data: "1/asset/multiSignature/publicKeys/length" },
             additionalItems: false,
             uniqueItems: true,
-            items: { allOf: [{ minLength: 128, maxLength: 128 }, { $ref: "hex" }] },
+            items: { allOf: [{ minLength: 130, maxLength: 130 }, { $ref: "hex" }] },
         },
     },
 });
@@ -249,6 +249,7 @@ export const ipfs = extend(transactionBaseSchema, {
         type: { transactionType: TransactionType.Core.Ipfs },
         amount: { bignumber: { minimum: 0, maximum: 0 } },
         fee: { bignumber: { minimum: 1 } },
+        vendorField: { anyOf: [{ type: "null" }, { type: "string", format: "vendorField" }] },
         asset: {
             type: "object",
             required: ["ipfs"],

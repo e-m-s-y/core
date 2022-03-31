@@ -67,7 +67,7 @@ export abstract class TransactionHandler {
 
     public getMinimumFee(
         transaction: Interfaces.ITransaction,
-        dynamicFeesConfiguration: { addonBytes: object; enabled: boolean; minFee: number },
+        dynamicFeesConfiguration: { addonBytes: object; enabled: boolean; minFee: number } | Record<string, any>,
     ): Utils.BigNumber {
         if (dynamicFeesConfiguration && dynamicFeesConfiguration.enabled) {
             const addonBytes: number = dynamicFeesConfiguration.addonBytes[transaction.key];
@@ -250,12 +250,7 @@ export abstract class TransactionHandler {
                 throw new InvalidSecondSignatureError();
             }
         } else if (data.secondSignature || data.signSignature) {
-            const isException =
-                Managers.configManager.get("network.name") === "devnet" &&
-                Managers.configManager.getMilestone().ignoreInvalidSecondSignatureField;
-            if (!isException) {
-                throw new UnexpectedSecondSignatureError();
-            }
+            throw new UnexpectedSecondSignatureError();
         }
 
         // Prevent legacy multisignatures from being used

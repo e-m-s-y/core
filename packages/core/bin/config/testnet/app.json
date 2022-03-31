@@ -17,10 +17,7 @@
                 "package": "@solar-network/core-transaction-pool"
             },
             {
-                "package": "@solar-network/core-p2p",
-                "options": {
-                    "minimumNetworkReach": 3
-                }
+                "package": "@solar-network/core-p2p"
             },
             {
                 "package": "@solar-network/core-blockchain"
@@ -54,10 +51,7 @@
                 "package": "@solar-network/core-transaction-pool"
             },
             {
-                "package": "@solar-network/core-p2p",
-                "options": {
-                    "minimumNetworkReach": 3
-                }
+                "package": "@solar-network/core-p2p"
             },
             {
                 "package": "@solar-network/core-blockchain"

@@ -1,5 +1,6 @@
 export const defaults = {
     server: {
+        banSeconds: process.env.CORE_P2P_BAN_SECONDS || 60,
         hostname: process.env.CORE_P2P_HOST || "0.0.0.0",
         port: process.env.CORE_P2P_PORT || 4002,
         logLevel: process.env.CORE_NETWORK_NAME === "testnet" ? 1 : 0,
@@ -7,7 +8,7 @@ export const defaults = {
     /**
      * The minimum peer version we expect
      */
-    minimumVersions: ["^3.0", "^3.0.0-next.0", "^3.0.0-alpha.0"],
+    minimumVersions: ["^3.2", "^3.2.0-next.0"],
     /**
      * The number of peers we expect to be available to start a relay
      */

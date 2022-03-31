@@ -34,7 +34,7 @@ export class BlockState implements Contracts.State.BlockState {
         try {
             for (const transaction of block.transactions) {
                 transactionProcessing.index = appliedTransactions.length;
-                await this.applyTransaction(transaction);
+                await this.applyTransaction(block.data.height, transaction);
                 transactionProcessing.index = undefined;
                 appliedTransactions.push(transaction);
             }
@@ -43,7 +43,7 @@ export class BlockState implements Contracts.State.BlockState {
             this.state.setLastBlock(block);
         } catch (error) {
             for (const transaction of appliedTransactions.reverse()) {
-                await this.revertTransaction(transaction);
+                await this.revertTransaction(block.data.height, transaction);
             }
 
             this.state.setLastBlock(previousBlock);
@@ -60,20 +60,22 @@ export class BlockState implements Contracts.State.BlockState {
             this.revertBlockFromForger(forgerWallet, block);
 
             for (const transaction of block.transactions.slice().reverse()) {
-                await this.revertTransaction(transaction);
+                await this.revertTransaction(block.data.height, transaction);
                 revertedTransactions.push(transaction);
             }
         } catch (error) {
             this.logger.error(error.stack);
             this.logger.error("Failed to revert all transactions in block - applying previous transactions");
             for (const transaction of revertedTransactions.reverse()) {
-                await this.applyTransaction(transaction);
+                await this.applyTransaction(block.data.height, transaction);
             }
             throw error;
         }
     }
 
-    public async applyTransaction(transaction: Interfaces.ITransaction): Promise<void> {
+    public async applyTransaction(height: number, transaction: Interfaces.ITransaction): Promise<void> {
+        transaction.setBurnedFee(height);
+
         const transactionHandler = await this.handlerRegistry.getActivatedHandlerForData(transaction.data);
 
         let lockWallet: Contracts.State.Wallet | undefined;
@@ -106,7 +108,9 @@ export class BlockState implements Contracts.State.BlockState {
         this.applyVoteBalances(sender, recipient, transaction.data, lockWallet, lockTransaction);
     }
 
-    public async revertTransaction(transaction: Interfaces.ITransaction): Promise<void> {
+    public async revertTransaction(height: number, transaction: Interfaces.ITransaction): Promise<void> {
+        transaction.setBurnedFee(height);
+
         const { data } = transaction;
 
         const transactionHandler = await this.handlerRegistry.getActivatedHandlerForData(transaction.data);
@@ -145,8 +149,8 @@ export class BlockState implements Contracts.State.BlockState {
         // ? packages/core-transactions/src/handlers/one/vote.ts:L120 blindly sets "vote" attribute
         // ? is it guaranteed that delegate wallet exists, so delegateWallet.getAttribute("delegate.voteBalance") is safe?
         if (wallet.hasVoted()) {
-            const delegatePulicKey = wallet.getAttribute<string>("vote");
-            const delegateWallet = this.walletRepository.findByPublicKey(delegatePulicKey);
+            const delegatePublicKey = wallet.getAttribute<string>("vote");
+            const delegateWallet = this.walletRepository.findByPublicKey(delegatePublicKey);
             const oldDelegateVoteBalance = delegateWallet.getAttribute<AppUtils.BigNumber>("delegate.voteBalance");
             const newDelegateVoteBalance = oldDelegateVoteBalance.plus(amount);
             delegateWallet.setAttribute("delegate.voteBalance", newDelegateVoteBalance);
@@ -155,8 +159,8 @@ export class BlockState implements Contracts.State.BlockState {
 
     public decreaseWalletDelegateVoteBalance(wallet: Contracts.State.Wallet, amount: AppUtils.BigNumber): void {
         if (wallet.hasVoted()) {
-            const delegatePulicKey = wallet.getAttribute<string>("vote");
-            const delegateWallet = this.walletRepository.findByPublicKey(delegatePulicKey);
+            const delegatePublicKey = wallet.getAttribute<string>("vote");
+            const delegateWallet = this.walletRepository.findByPublicKey(delegatePublicKey);
             const oldDelegateVoteBalance = delegateWallet.getAttribute<AppUtils.BigNumber>("delegate.voteBalance");
             const newDelegateVoteBalance = oldDelegateVoteBalance.minus(amount);
             delegateWallet.setAttribute("delegate.voteBalance", newDelegateVoteBalance);
@@ -243,7 +247,14 @@ export class BlockState implements Contracts.State.BlockState {
 
             for (let i = 0; i < transaction.asset.votes.length; i++) {
                 const vote: string = transaction.asset.votes[i];
-                const delegate: Contracts.State.Wallet = this.walletRepository.findByPublicKey(vote.substr(1));
+                let delegate: Contracts.State.Wallet;
+
+                const delegateVote: string = vote.slice(1);
+                if (delegateVote.length === 66) {
+                    delegate = this.walletRepository.findByPublicKey(delegateVote);
+                } else {
+                    delegate = this.walletRepository.findByUsername(delegateVote);
+                }
 
                 // first unvote also changes vote balance by fee
                 const senderVoteDelegatedAmount =

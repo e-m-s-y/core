@@ -1,7 +1,7 @@
 import { Container, Contracts, Enums, Providers, Services, Utils } from "@solar-network/core-kernel";
-import { DatabaseInteraction } from "@solar-network/core-state";
 import { Identities, Interfaces, Managers } from "@solar-network/crypto";
 import delay from "delay";
+import { readJSONSync } from "fs-extra";
 import prettyMs from "pretty-ms";
 import { gt, lt } from "semver";
 
@@ -18,9 +18,6 @@ const defaultDownloadChunkSize = 400;
 export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
     @Container.inject(Container.Identifiers.Application)
     public readonly app!: Contracts.Kernel.Application;
-
-    @Container.inject(Container.Identifiers.DatabaseInteraction)
-    private readonly databaseInteraction!: DatabaseInteraction;
 
     @Container.inject(Container.Identifiers.PluginConfiguration)
     @Container.tagged("plugin", "@solar-network/core-p2p")
@@ -41,6 +38,13 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
     @Container.inject(Container.Identifiers.LogService)
     private readonly logger!: Contracts.Kernel.Logger;
 
+    @Container.inject(Container.Identifiers.TriggerService)
+    private readonly triggers!: Services.Triggers.Triggers;
+
+    @Container.inject(Container.Identifiers.WalletRepository)
+    @Container.tagged("state", "blockchain")
+    private readonly walletRepository!: Contracts.State.WalletRepository;
+
     public config: any;
     public nextUpdateNetworkStatusScheduled: boolean | undefined;
     private coldStart: boolean = false;
@@ -48,6 +52,7 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
     private downloadChunkSize: number = defaultDownloadChunkSize;
 
     private initializing = true;
+    private lastPinged: number = 0;
 
     @Container.postConstruct()
     public initialize(): void {
@@ -83,8 +88,23 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
             }
         }
 
-        // Give time to cooldown rate limits after peer verifier finished.
-        await Utils.sleep(1000);
+        this.events.listen(Enums.BlockchainEvent.Synced, {
+            handle: async () => {
+                await delay(1000);
+                this.pingAll();
+            },
+        });
+
+        this.events.listen(Enums.RoundEvent.Applied, {
+            handle: () => {
+                const synced = this.app
+                    .get<Contracts.Blockchain.Blockchain>(Container.Identifiers.BlockchainService)
+                    .isSynced();
+                if (synced) {
+                    this.pingAll();
+                }
+            },
+        });
 
         this.initializing = false;
     }
@@ -152,6 +172,8 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
             .getLastBlock();
         const blockTimeLookup = await Utils.forgingInfoCalculator.getBlockTimeLookup(this.app, lastBlock.data.height);
 
+        const pingedPeers: Set<Contracts.P2P.Peer> = new Set();
+
         // we use Promise.race to cut loose in case some communicator.ping() does not resolve within the delay
         // in that case we want to keep on with our program execution while ping promises can finish in the background
         await new Promise<void>((resolve) => {
@@ -167,6 +189,7 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
             Promise.all(
                 peers.map(async (peer) => {
                     try {
+                        pingedPeers.add(peer);
                         await this.communicator.ping(peer, pingDelay, blockTimeLookup, forcePing);
                     } catch (error) {
                         unresponsivePeers++;
@@ -177,12 +200,18 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
                         await this.events.dispatch(Enums.PeerEvent.Disconnect, { peer });
 
                         this.events.dispatch(Enums.PeerEvent.Removed, peer);
+                    } finally {
+                        pingedPeers.delete(peer);
                     }
                 }),
             ).then(resolvesFirst);
 
             delay(pingDelay).finally(resolvesFirst);
         });
+
+        for (const peer of pingedPeers) {
+            peer.addInfraction();
+        }
 
         for (const key of Object.keys(peerErrors)) {
             const peerCount = peerErrors[key].length;
@@ -315,9 +344,9 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
                 lastBlock.data.height,
             );
 
-            peers.forEach((peer) => {
+            for (const peer of peers) {
                 peer.publicKeys = peer.publicKeys.filter((publicKey) => !localPeer.publicKeys.includes(publicKey));
-            });
+            }
             peers.push(localPeer);
 
             for (const peer of peers) {
@@ -387,6 +416,25 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
         }
 
         return { forked: false };
+    }
+
+    public async getAllDelegates(): Promise<string[]> {
+        const lastBlock: Interfaces.IBlock = this.app
+            .get<Contracts.State.StateStore>(Container.Identifiers.StateStore)
+            .getLastBlock();
+
+        const height = lastBlock.data.height + 1;
+        const roundInfo = Utils.roundCalculator.calculateRound(height);
+
+        return (
+            (await this.triggers.call("getActiveDelegates", {
+                roundInfo,
+            })) as Contracts.State.Wallet[]
+        ).map((wallet) => wallet.getAttribute("delegate.username"));
+    }
+
+    public getDelegateName(publicKey: string): string {
+        return this.walletRepository.findByPublicKey(publicKey).getAttribute("delegate.username");
     }
 
     public async downloadBlocksFromHeight(
@@ -523,12 +571,13 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
         }
         let firstFailureMessage!: string;
 
-        try {
-            // Convert the array of AsyncFunction to an array of Promise by calling the functions.
+        // Convert the array of AsyncFunction to an array of Promise by calling the functions.
+        // @ts-ignore
+        const result = await Promise.allSettled(downloadJobs.map((f) => f()));
+        const failure = result.find((value) => value.status === "rejected");
+        if (failure) {
             // @ts-ignore
-            await Promise.all(downloadJobs.map((f) => f()));
-        } catch (error) {
-            firstFailureMessage = error.message;
+            firstFailureMessage = failure.reason;
         }
 
         let downloadedBlocks: Interfaces.IBlockData[] = [];
@@ -646,20 +695,23 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
         const height = lastBlock.data.height + 1;
         const roundInfo = Utils.roundCalculator.calculateRound(height);
 
-        const delegates = (await this.databaseInteraction.getActiveDelegates(roundInfo)).map(
-            (wallet: Contracts.State.Wallet) => wallet.getPublicKey(),
-        );
-        const delegatesOnThisNode: string[] = [];
+        const delegates: (string | undefined)[] = (
+            (await this.triggers.call("getActiveDelegates", {
+                roundInfo,
+            })) as Contracts.State.Wallet[]
+        ).map((wallet) => wallet.getPublicKey());
 
-        if (Utils.isForgerRunning()) {
-            for (const secret of this.app.config("delegates.secrets")) {
+        const delegatesOnThisNode: string[] = [];
+        const publicKeys = Utils.getForgerDelegates();
+        if (publicKeys.length > 0) {
+            const { secrets } = readJSONSync(`${this.app.configPath()}/delegates.json`);
+            for (const secret of secrets) {
                 const keys: Interfaces.IKeyPair = Identities.Keys.fromPassphrase(secret);
-                if (delegates.includes(keys.publicKey)) {
+                if (delegates.includes(keys.publicKey) && publicKeys.includes(keys.publicKey)) {
                     delegatesOnThisNode.push(keys.publicKey);
                 }
             }
         }
-
         return delegatesOnThisNode;
     }
 
@@ -685,6 +737,14 @@ export class NetworkMonitor implements Contracts.P2P.NetworkMonitor {
         }
 
         return Object.keys(this.repository.getPeers()).length >= this.config.minimumNetworkReach;
+    }
+
+    private pingAll(): void {
+        const timeNow: number = new Date().getTime() / 1000;
+        if (timeNow - this.lastPinged > 10) {
+            this.cleansePeers({ fast: true, forcePing: true, log: false });
+            this.lastPinged = timeNow;
+        }
     }
 
     private async populateSeedPeers(): Promise<any> {

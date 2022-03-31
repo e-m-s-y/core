@@ -31,7 +31,7 @@ export class Command extends Commands.Command {
      * @memberof Command
      */
     public configure(): void {
-        this.definition.setFlag("token", "The name of the token", Joi.string().default("ark"));
+        this.definition.setFlag("token", "The name of the token", Joi.string().default("solar"));
     }
 
     /**
@@ -41,6 +41,6 @@ export class Command extends Commands.Command {
      * @memberof Command
      */
     public async execute(): Promise<void> {
-        this.app.get<any>(Container.Identifiers.ProcessFactory)(this.getFlag("token"), "core").restart();
+        await this.app.get<any>(Container.Identifiers.ProcessFactory)(this.getFlag("token"), "core").restart();
     }
 }

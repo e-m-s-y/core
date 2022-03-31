@@ -12,6 +12,13 @@ import { Webhook } from "../interfaces";
 import { whitelist } from "./plugins/whitelist";
 import * as schema from "./schema";
 import * as utils from "./utils";
+
+declare module "@hapi/hapi" {
+    interface ServerApplicationState {
+        database: Database;
+    }
+}
+
 /**
  * @export
  * @class Server
@@ -56,7 +63,7 @@ export class Server {
      * @type {HapiServer}
      * @memberof Server
      */
-    private server: HapiServer;
+    private server!: HapiServer;
 
     /**
      * @param {string} name
@@ -183,12 +190,12 @@ export class Server {
      */
     private registerRoutes(): void {
         const swaggerJson = readJsonSync(`${__dirname}/../www/api.json`);
-        swaggerJson.servers.push({ url: this.configuration.getRequired<string>("options.basePath") });
+        swaggerJson.servers.push({ url: this.configuration.getRequired<string>("basePath") });
         swaggerJson.info.version = this.app.version();
 
         this.server.route({
             method: "GET",
-            path: `${this.configuration.get("options.basePath")}/webhooks`,
+            path: `${this.configuration.get("basePath")}/webhooks`,
             handler: (request) => {
                 return {
                     data: request.server.app.database.all().map((webhook) => {
@@ -202,7 +209,7 @@ export class Server {
 
         this.server.route({
             method: "POST",
-            path: `${this.configuration.get("options.basePath")}/webhooks`,
+            path: `${this.configuration.get("basePath")}/webhooks`,
             handler(request: any, h) {
                 const token: string = randomBytes(32).toString("hex");
 
@@ -230,7 +237,7 @@ export class Server {
 
         this.server.route({
             method: "GET",
-            path: `${this.configuration.get("options.basePath")}/webhooks/{id}`,
+            path: `${this.configuration.get("basePath")}/webhooks/{id}`,
             async handler(request) {
                 if (!request.server.app.database.hasById(request.params.id)) {
                     return Boom.notFound();
@@ -255,7 +262,7 @@ export class Server {
 
         this.server.route({
             method: "PUT",
-            path: `${this.configuration.get("options.basePath")}/webhooks/{id}`,
+            path: `${this.configuration.get("basePath")}/webhooks/{id}`,
             handler: (request, h) => {
                 if (!request.server.app.database.hasById(request.params.id)) {
                     return Boom.notFound();
@@ -272,7 +279,7 @@ export class Server {
 
         this.server.route({
             method: "DELETE",
-            path: `${this.configuration.get("options.basePath")}/webhooks/{id}`,
+            path: `${this.configuration.get("basePath")}/webhooks/{id}`,
             handler: (request, h) => {
                 if (!request.server.app.database.hasById(request.params.id)) {
                     return Boom.notFound();

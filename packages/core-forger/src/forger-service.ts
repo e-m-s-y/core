@@ -1,9 +1,9 @@
 import { Container, Contracts, Enums, Services, Utils as AppUtils } from "@solar-network/core-kernel";
 import { NetworkStateStatus } from "@solar-network/core-p2p";
 import { Handlers } from "@solar-network/core-transactions";
-import { Blocks, Interfaces, Managers, Transactions, Utils } from "@solar-network/crypto";
+import { Blocks, Interfaces, Managers, Transactions } from "@solar-network/crypto";
 import delay from "delay";
-import { writeFileSync } from "fs";
+import { writeJSONSync } from "fs-extra";
 
 import { Client } from "./client";
 import { HostNoResponseError, RelayCommunicationError } from "./errors";
@@ -200,6 +200,10 @@ export class ForgerService {
 
             AppUtils.assert.defined<Contracts.P2P.CurrentRound>(this.round);
 
+            if (this.round.timestamp < 0) {
+                return this.checkLater(this.getRemainingSlotTime()!);
+            }
+
             AppUtils.assert.defined<string>(this.round.currentForger.publicKey);
 
             const delegate: Delegate | undefined = this.isActiveDelegate(this.round.currentForger.publicKey);
@@ -226,6 +230,7 @@ export class ForgerService {
             }
 
             this.errorCount = 0;
+
             await this.app
                 .get<Services.Triggers.Triggers>(Container.Identifiers.TriggerService)
                 .call("forgeNewBlock", { forgerService: this, delegate, firstAttempt: true, round: this.round });
@@ -272,7 +277,7 @@ export class ForgerService {
             let errored = false;
             const minimumMs = 2000;
             try {
-                let networkState: Contracts.P2P.NetworkState = await this.client.getNetworkState(firstAttempt);
+                const networkState: Contracts.P2P.NetworkState = await this.client.getNetworkState(firstAttempt);
                 const networkStateHeight = networkState.getNodeHeight();
 
                 AppUtils.assert.defined<number>(networkStateHeight);
@@ -295,14 +300,13 @@ export class ForgerService {
                         height: networkStateHeight,
                     },
                     timestamp: round.timestamp,
-                    reward: Utils.calculateReward(networkStateHeight + 1, round.currentForger.delegate.rank!),
+                    reward: round.reward,
                 });
 
                 const timeLeftInMs: number = this.getRoundRemainingSlotTime(round);
 
                 const prettyName = this.usernames[delegate.publicKey];
 
-                networkState = await this.client.getNetworkState(false);
                 const { state } = await this.client.getStatus();
                 const currentSlot = await this.client.getSlotNumber();
                 const lastBlockSlot = await this.client.getSlotNumber(state.header.timestamp);
@@ -551,11 +555,14 @@ export class ForgerService {
         if (!this.initialized) {
             AppUtils.sendForgerSignal("SIGTERM");
 
-            const pidFile: string = `${process.env.CORE_PATH_TEMP}/forger.pid`;
+            const jsonFile: string = `${process.env.CORE_PATH_TEMP}/forger.json`;
             try {
-                writeFileSync(pidFile, process.pid.toString());
+                writeJSONSync(jsonFile, {
+                    pid: process.pid,
+                    publicKeys: this.delegates.map((delegate) => delegate.publicKey),
+                });
             } catch {
-                this.app.terminate(`Could not save forger pid to ${pidFile}`);
+                this.app.terminate(`Could not save forger data to ${jsonFile}`);
             }
 
             this.printLoadedDelegates();

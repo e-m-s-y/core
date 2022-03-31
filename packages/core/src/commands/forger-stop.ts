@@ -32,7 +32,7 @@ export class Command extends Commands.Command {
      */
     public configure(): void {
         this.definition
-            .setFlag("token", "The name of the token", Joi.string().default("ark"))
+            .setFlag("token", "The name of the token", Joi.string().default("solar"))
             .setFlag("daemon", "Stop the Core process or daemon", Joi.boolean());
     }
 
@@ -43,7 +43,7 @@ export class Command extends Commands.Command {
      * @memberof Command
      */
     public async execute(): Promise<void> {
-        this.app
+        await this.app
             .get<any>(Container.Identifiers.ProcessFactory)(this.getFlag("token"), "forger")
             .stop(this.getFlag("daemon"));
     }

@@ -1,6 +1,6 @@
 {
     "name": "@solar-network/core-logger-pino",
-    "version": "3.1.1",
+    "version": "3.2.1-next.1",
     "description": "Webhooks for Solar Core",
     "license": "CC-BY-ND-4.0",
     "contributors": [
@@ -13,18 +13,14 @@
     ],
     "main": "dist/index",
     "scripts": {
-        "build": "yarn clean && yarn compile",
-        "build:watch": "yarn clean && yarn compile -w",
-        "build:docs": "../../node_modules/typedoc/bin/typedoc --out docs src",
+        "build": "pnpm clean && pnpm compile",
         "clean": "rimraf dist",
-        "compile": "node ../../node_modules/typescript/bin/tsc",
-        "prepublishOnly": "yarn build",
-        "pretest": "bash ../../scripts/pre-test.sh"
+        "compile": "node ../../node_modules/typescript/bin/tsc"
     },
     "dependencies": {
-        "@solar-network/core-kernel": "3.1.1",
+        "@solar-network/core-kernel": "workspace:*",
         "chalk": "4.1.2",
-        "joi": "17.4.2",
+        "joi": "17.6.0",
         "node-emoji": "1.11.0",
         "pino": "6.13.2",
         "pino-pretty": "4.8.0",
@@ -33,9 +29,6 @@
         "readable-stream": "3.6.0",
         "rotating-file-stream": "2.1.5",
         "split2": "3.2.2"
-    },
-    "publishConfig": {
-        "access": "public"
     },
     "devDependencies": {
         "@types/pino": "6.3.11",

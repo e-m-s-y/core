@@ -4,9 +4,13 @@ import { Interfaces } from "@solar-network/crypto";
 import { Database, Meta } from "./contracts";
 import { Filesystem } from "./filesystem/filesystem";
 import { Identifiers } from "./ioc";
+import { ProgressRenderer } from "./progress-renderer";
 
 @Container.injectable()
 export class SnapshotService implements Contracts.Snapshot.SnapshotService {
+    @Container.inject(Container.Identifiers.Application)
+    private readonly app!: Contracts.Kernel.Application;
+
     @Container.inject(Identifiers.SnapshotFilesystem)
     private readonly filesystem!: Filesystem;
 
@@ -17,6 +21,8 @@ export class SnapshotService implements Contracts.Snapshot.SnapshotService {
     private readonly database!: Database.DatabaseService;
 
     public async dump(options: Contracts.Snapshot.DumpOptions): Promise<void> {
+        const renderer = new ProgressRenderer(this.app);
+
         try {
             Utils.assert.defined<string>(options.network);
 
@@ -25,15 +31,19 @@ export class SnapshotService implements Contracts.Snapshot.SnapshotService {
             this.database.init(options.codec, options.skipCompression);
 
             await this.database.dump(options);
+            renderer.spinner.succeed();
 
-            this.logger.info(`Snapshot is saved on location: ${this.filesystem.getSnapshotPath()}`);
+            this.logger.info(`Snapshot was saved to: ${this.filesystem.getSnapshotPath()}`);
         } catch (err) {
+            renderer.spinner.fail();
             this.logger.error(`DUMP failed`);
             this.logger.error(err.stack);
         }
     }
 
     public async restore(options: Contracts.Snapshot.RestoreOptions): Promise<void> {
+        const renderer = new ProgressRenderer(this.app);
+
         try {
             Utils.assert.defined<string>(options.network);
             Utils.assert.defined<string>(options.blocks);
@@ -49,9 +59,7 @@ export class SnapshotService implements Contracts.Snapshot.SnapshotService {
             try {
                 meta = await this.filesystem.readMetaData();
             } catch (e) {
-                this.logger.error(
-                    `Metadata for snapshot ${options.blocks} of network ${options.network} are not valid`,
-                );
+                this.logger.error(`Metadata for snapshot ${options.blocks} of network ${options.network} is not valid`);
                 return;
             }
 
@@ -60,20 +68,24 @@ export class SnapshotService implements Contracts.Snapshot.SnapshotService {
             this.database.init(meta!.codec, meta!.skipCompression, options.verify);
 
             await this.database.restore(meta!, { truncate: !!options.truncate });
+            renderer.spinner.succeed();
 
             this.logger.info(
-                `Successfully restore  ${Utils.pluralize("block", meta!.blocks.count, true)}, ${Utils.pluralize(
+                `Successfully restored ${Utils.pluralize("block", meta!.blocks.count, true)}, ${Utils.pluralize(
                     "transaction",
                     meta!.transactions.count,
                     true,
                 )}, ${Utils.pluralize("round", meta!.rounds.count, true)}`,
             );
         } catch (err) {
+            renderer.spinner.fail();
             this.logger.error(`RESTORE failed`);
         }
     }
 
     public async verify(options: Contracts.Snapshot.RestoreOptions): Promise<void> {
+        const renderer = new ProgressRenderer(this.app);
+
         try {
             this.logger.info("Running VERIFICATION");
 
@@ -91,16 +103,16 @@ export class SnapshotService implements Contracts.Snapshot.SnapshotService {
             try {
                 meta = await this.filesystem.readMetaData();
             } catch (e) {
-                this.logger.error(
-                    `Metadata for snapshot ${options.blocks} of network ${options.network} are not valid`,
-                );
+                this.logger.error(`Metadata for snapshot ${options.blocks} of network ${options.network} is not valid`);
             }
 
             this.database.init(meta!.codec, meta!.skipCompression);
 
             await this.database.verify(meta!);
+            renderer.spinner.succeed();
             this.logger.info(`VERIFICATION is successful`);
         } catch (err) {
+            renderer.spinner.fail();
             this.logger.error(`VERIFICATION failed`);
             this.logger.error(err.stack);
         }
@@ -133,7 +145,7 @@ export class SnapshotService implements Contracts.Snapshot.SnapshotService {
             const newLastBlock = await this.database.rollback(roundInfo);
 
             this.logger.info(
-                `Rolling back chain to last finished round ${roundInfo.round.toLocaleString()} with last block height ${newLastBlock.data.height.toLocaleString()}`,
+                `Rolling back blockchain to last finished round ${roundInfo.round.toLocaleString()} with last block height ${newLastBlock.data.height.toLocaleString()}`,
             );
         } catch (err) {
             this.logger.error("ROLLBACK failed");
@@ -142,7 +154,7 @@ export class SnapshotService implements Contracts.Snapshot.SnapshotService {
     }
 
     public async rollbackByNumber(number: number): Promise<void> {
-        this.logger.info("Running ROLLBACK by Number method inside SnapshotService");
+        this.logger.info("Running ROLLBACK");
 
         const lastBlock = await this.database.getLastBlock();
 

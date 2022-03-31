@@ -22,6 +22,9 @@ export class SnapshotDatabaseService implements Database.DatabaseService {
     @Container.tagged("plugin", "@solar-network/core-database")
     private readonly coreDatabaseConfiguration!: Providers.PluginConfiguration;
 
+    @Container.inject(Container.Identifiers.PluginDiscoverer)
+    private readonly pluginDiscoverer!: Providers.PluginDiscoverer;
+
     @Container.inject(Container.Identifiers.LogService)
     private readonly logger!: Contracts.Kernel.Logger;
 
@@ -73,13 +76,13 @@ export class SnapshotDatabaseService implements Database.DatabaseService {
 
     public async dump(options: Options.DumpOptions): Promise<void> {
         try {
-            this.logger.info("Start counting blocks, rounds and transactions");
+            this.logger.info("Started counting blocks, rounds and transactions");
 
             const dumpRage = await this.getDumpRange(options.start, options.end);
             const meta = this.prepareMetaData(options, dumpRage);
 
             this.logger.info(
-                `Start running dump for ${Utils.pluralize("block", dumpRage.blocksCount, true)}, ${Utils.pluralize(
+                `Started running dump for ${Utils.pluralize("block", dumpRage.blocksCount, true)}, ${Utils.pluralize(
                     "round",
                     dumpRage.roundsCount,
                     true,
@@ -334,6 +337,11 @@ export class SnapshotDatabaseService implements Database.DatabaseService {
     }
 
     private prepareWorkerData(action: string, table: string, meta: Meta.MetaData): any {
+        const cryptoPackages: string[] = [];
+        for (const packageName of this.configuration.getOptional<string[]>("cryptoPackages", [])) {
+            cryptoPackages.push(this.pluginDiscoverer.get(packageName).packageId);
+        }
+
         return {
             actionOptions: {
                 action: action,
@@ -347,7 +355,7 @@ export class SnapshotDatabaseService implements Database.DatabaseService {
                 updateStep: this.configuration.getOptional("updateStep", 1000),
             },
             networkConfig: Managers.configManager.all()!,
-            cryptoPackages: this.configuration.getOptional("cryptoPackages", []),
+            cryptoPackages,
             connection: this.coreDatabaseConfiguration.getRequired("connection"),
         };
     }

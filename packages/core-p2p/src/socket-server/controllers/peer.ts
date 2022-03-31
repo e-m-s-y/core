@@ -1,20 +1,23 @@
 import Hapi from "@hapi/hapi";
-import { Container, Contracts, Utils } from "@solar-network/core-kernel";
-import { DatabaseInteraction, DatabaseInterceptor } from "@solar-network/core-state";
+import { Container, Contracts, Services, Utils } from "@solar-network/core-kernel";
+import { DatabaseInterceptor } from "@solar-network/core-state";
 import { Crypto, Identities, Interfaces } from "@solar-network/crypto";
+import { readJSONSync } from "fs-extra";
 
 import { constants } from "../../constants";
 import { MissingCommonBlockError } from "../../errors";
+import { Socket } from "../../hapi-nes/socket";
 import { getPeerIp } from "../../utils/get-peer-ip";
 import { getPeerConfig } from "../utils/get-peer-config";
 import { Controller } from "./controller";
 
+interface GetPeersRequest extends Hapi.Request {
+    socket: Socket;
+}
+
 export class PeerController extends Controller {
     @Container.inject(Container.Identifiers.PeerRepository)
     private readonly peerRepository!: Contracts.P2P.PeerRepository;
-
-    @Container.inject(Container.Identifiers.DatabaseInteraction)
-    private readonly databaseInteraction!: DatabaseInteraction;
 
     @Container.inject(Container.Identifiers.DatabaseInterceptor)
     private readonly databaseInterceptor!: DatabaseInterceptor;
@@ -22,9 +25,12 @@ export class PeerController extends Controller {
     @Container.inject(Container.Identifiers.BlockchainService)
     private readonly blockchain!: Contracts.Blockchain.Blockchain;
 
+    @Container.inject(Container.Identifiers.TriggerService)
+    private readonly triggers!: Services.Triggers.Triggers;
+
     private cachedHeader: Contracts.P2P.PeerPingResponse | undefined;
 
-    public getPeers(request: Hapi.Request, h: Hapi.ResponseToolkit): Contracts.P2P.PeerBroadcast[] {
+    public getPeers(request: GetPeersRequest, h: Hapi.ResponseToolkit): Contracts.P2P.PeerBroadcast[] {
         const peerIp = getPeerIp(request.socket);
 
         return this.peerRepository
@@ -95,14 +101,18 @@ export class PeerController extends Controller {
         const height = lastBlock.data.height + 1;
         const roundInfo = Utils.roundCalculator.calculateRound(height);
 
-        const delegates = (await this.databaseInteraction.getActiveDelegates(roundInfo)).map(
-            (wallet: Contracts.State.Wallet) => wallet.getPublicKey(),
-        );
+        const delegates: (string | undefined)[] = (
+            (await this.triggers.call("getActiveDelegates", {
+                roundInfo,
+            })) as Contracts.State.Wallet[]
+        ).map((wallet) => wallet.getPublicKey());
 
-        if (Utils.isForgerRunning()) {
-            for (const secret of this.app.config("delegates.secrets")) {
+        const publicKeys = Utils.getForgerDelegates();
+        if (publicKeys.length > 0) {
+            const { secrets } = readJSONSync(`${this.app.configPath()}/delegates.json`);
+            for (const secret of secrets) {
                 const keys: Interfaces.IKeyPair = Identities.Keys.fromPassphrase(secret);
-                if (delegates.includes(keys.publicKey)) {
+                if (delegates.includes(keys.publicKey) && publicKeys.includes(keys.publicKey)) {
                     header.publicKeys.push(keys.publicKey);
                     header.signatures.push(Crypto.Hash.signSchnorr(stateBuffer, keys));
                 }
