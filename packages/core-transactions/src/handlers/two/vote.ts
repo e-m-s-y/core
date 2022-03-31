@@ -1,5 +1,6 @@
-import { Container, Contracts, Utils as AppUtils } from "@arkecosystem/core-kernel";
-import { Transactions } from "@arkecosystem/crypto";
+import { Container, Contracts, Utils as AppUtils } from "@solar-network/core-kernel";
+import { Transactions } from "@solar-network/crypto";
+
 import { AlreadyVotedError, NoVoteError, UnvoteMismatchError } from "../../errors";
 import { One } from "../index";
 import { TransactionHandlerConstructor } from "../transaction";
@@ -33,16 +34,22 @@ export class VoteTransactionHandler extends One.VoteTransactionHandler {
             for (const vote of transaction.asset.votes) {
                 const hasVoted: boolean = wallet.hasAttribute("vote");
 
+                let delegateVote: string = vote.slice(1);
+                if (delegateVote.length !== 66) {
+                    const delegateWallet: Contracts.State.Wallet = this.walletRepository.findByUsername(delegateVote);
+                    delegateVote = delegateWallet.getPublicKey()!;
+                }
+
                 if (vote.startsWith("+")) {
                     if (hasVoted) {
                         throw new AlreadyVotedError();
                     }
 
-                    wallet.setAttribute("vote", vote.slice(1));
+                    wallet.setAttribute("vote", delegateVote);
                 } else {
                     if (!hasVoted) {
                         throw new NoVoteError();
-                    } else if (wallet.getAttribute("vote") !== vote.slice(1)) {
+                    } else if (wallet.getAttribute("vote") !== delegateVote) {
                         throw new UnvoteMismatchError();
                     }
 

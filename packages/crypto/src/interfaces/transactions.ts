@@ -17,6 +17,8 @@ export interface ITransaction {
     serialized: Buffer;
     timestamp: number;
 
+    setBurnedFee(height: number): void;
+
     serialize(options?: ISerializeOptions): ByteBuffer | undefined;
     deserialize(buf: ByteBuffer): void;
 
@@ -58,6 +60,7 @@ export interface ITransactionData {
     senderPublicKey: string | undefined;
 
     fee: BigNumber;
+    burnedFee?: BigNumber;
     amount: BigNumber;
 
     expiration?: number;
@@ -89,6 +92,7 @@ export interface ITransactionJson {
     senderPublicKey: string;
 
     fee: string;
+    burnedFee: string;
     amount: string;
 
     expiration?: number;
