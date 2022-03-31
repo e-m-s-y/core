@@ -8,7 +8,15 @@
                 "package": "@solar-network/core-state"
             },
             {
-                "package": "@solar-network/core-database"
+                "package": "@solar-network/core-database",
+                "options": {
+                    "connection": {
+                        "extra": {
+                            "host": "localhost"
+                        },
+                        "username": "helios"
+                    }
+                }
             },
             {
                 "package": "@solar-network/core-transactions"
@@ -23,7 +31,20 @@
                 "package": "@solar-network/core-blockchain"
             },
             {
-                "package": "@solar-network/core-api"
+                "package": "@solar-network/core-api",
+                "options": {
+                    "plugins": {
+                        "cache": {
+                            "enabled": false
+                        },
+                        "pagination": {
+                            "limit": 250
+                        }
+                    },
+                    "options": {
+                        "estimateTotalCount": false
+                    }
+                }
             },
             {
                 "package": "@solar-network/core-webhooks"
@@ -42,7 +63,15 @@
                 "package": "@solar-network/core-state"
             },
             {
-                "package": "@solar-network/core-database"
+                "package": "@solar-network/core-database",
+                "options": {
+                    "connection": {
+                        "extra": {
+                            "host": "localhost"
+                        },
+                        "username": "helios"
+                    }
+                }
             },
             {
                 "package": "@solar-network/core-transactions"
@@ -57,7 +86,18 @@
                 "package": "@solar-network/core-blockchain"
             },
             {
-                "package": "@solar-network/core-api"
+                "package": "@solar-network/core-api",
+                "options": {
+                    "cache": {
+                        "enabled": false
+                    },
+                    "pagination": {
+                        "limit": 250
+                    },
+                    "options": {
+                        "estimateTotalCount": false
+                    }
+                }
             },
             {
                 "package": "@solar-network/core-webhooks"
@@ -83,7 +123,15 @@
                 "package": "@solar-network/core-logger-pino"
             },
             {
-                "package": "@solar-network/core-database"
+                "package": "@solar-network/core-database",
+                "options": {
+                    "connection": {
+                        "extra": {
+                            "host": "localhost"
+                        },
+                        "username": "helios"
+                    }
+                }
             },
             {
                 "package": "@solar-network/core-snapshots"
