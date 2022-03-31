@@ -1,5 +1,5 @@
-import { Container, Contracts, Utils as AppUtils } from "@arkecosystem/core-kernel";
-import { Interfaces, Transactions } from "@arkecosystem/crypto";
+import { Container, Contracts, Utils as AppUtils } from "@solar-network/core-kernel";
+import { Interfaces, Transactions } from "@solar-network/crypto";
 
 import { Block } from "./models/block";
 import { Transaction } from "./models/transaction";
@@ -44,6 +44,8 @@ export class ModelConverter implements Contracts.Database.ModelConverter {
 
             // set_row_nonce trigger
             data.nonce = model.nonce;
+
+            data.burnedFee = model.burnedFee;
 
             // block constructor
             data.blockId = model.blockId;

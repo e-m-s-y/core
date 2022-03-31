@@ -39,7 +39,15 @@ export const schemas = {
 
     walletVote: {
         $id: "walletVote",
-        allOf: [{ type: "string", pattern: "^[+|-][a-zA-Z0-9]{66}$" }, { transform: ["toLowerCase"] }],
+        allOf: [
+            {
+                oneOf: [
+                    { type: "string", pattern: "^[+|-][a-zA-Z0-9]{66}$" },
+                    { type: "string", pattern: "^[+|-][a-z0-9!@$&_.]+$", minLength: 2, maxLength: 21 },
+                ],
+            },
+            { transform: ["toLowerCase"] },
+        ],
     },
 
     username: {
@@ -93,7 +101,7 @@ export const schemas = {
             payloadLength: { type: "integer", minimum: 0 },
             payloadHash: { $ref: "hex" },
             generatorPublicKey: { $ref: "publicKey" },
-            blockSignature: { $ref: "hex" },
+            blockSignature: { allOf: [{ minLength: 128, maxLength: 128 }, { $ref: "hex" }] },
         },
     },
 
