@@ -730,6 +730,9 @@ importers:
   plugins/helios-crypto:
     specifiers:
       '@solar-network/crypto': workspace:*
+      deepmerge: 4.2.2
+    dependencies:
+      deepmerge: 4.2.2
     devDependencies:
       '@solar-network/crypto': link:../../packages/crypto
 
