@@ -1,21 +1,21 @@
 #!/bin/bash
 
 function cleanup() {
-    PATH=$SOLAR_OLD_PATH
-    CFLAGS=$SOLAR_OLD_CFLAGS
-    LDFLAGS=$SOLAR_OLD_LDFLAGS
-    PERL5LIB=$SOLAR_OLD_PERL5LIB
-    GIT_EXEC_PATH=$SOLAR_OLD_GIT_EXEC_PATH
-    GIT_TEMPLATE_DIR=$SOLAR_OLD_GIT_TEMPLATE_DIR
+    PATH=$HELIOS_OLD_PATH
+    CFLAGS=$HELIOS_OLD_CFLAGS
+    LDFLAGS=$HELIOS_OLD_LDFLAGS
+    PERL5LIB=$HELIOS_OLD_PERL5LIB
+    GIT_EXEC_PATH=$HELIOS_OLD_GIT_EXEC_PATH
+    GIT_TEMPLATE_DIR=$HELIOS_OLD_GIT_TEMPLATE_DIR
 
-    unset SOLAR_OLD_PATH
-    unset SOLAR_OLD_CFLAGS
-    unset SOLAR_OLD_LDFLAGS
-    unset SOLAR_OLD_PERL5LIB
-    unset SOLAR_OLD_GIT_EXEC_PATH
-    unset SOLAR_OLD_GIT_TEMPLATE_DIR
+    unset HELIOS_OLD_PATH
+    unset HELIOS_OLD_CFLAGS
+    unset HELIOS_OLD_LDFLAGS
+    unset HELIOS_OLD_PERL5LIB
+    unset HELIOS_OLD_GIT_EXEC_PATH
+    unset HELIOS_OLD_GIT_TEMPLATE_DIR
 
-    rm -rf "$SOLAR_TEMP_PATH"
+    rm -rf "$HELIOS_TEMP_PATH"
     tput cnorm
 }
 
@@ -25,6 +25,8 @@ function sigtrap() {
 }
 
 echo '
+                            Helios is powered by
+
 ███████╗ ██████╗ ██╗      █████╗ ██████╗      ██████╗ ██████╗ ██████╗ ███████╗
 ██╔════╝██╔═══██╗██║     ██╔══██╗██╔══██╗    ██╔════╝██╔═══██╗██╔══██╗██╔════╝
 ███████╗██║   ██║██║     ███████║██████╔╝    ██║     ██║   ██║██████╔╝█████╗
@@ -35,71 +37,71 @@ echo '
 DEB=$(which apt-get 2>/dev/null || :)
 
 if [[ -z $DEB ]]; then
-    echo Sorry, Solar Core is only compatible with Debian-based Linux distributions
+    echo Sorry, Helios Core is only compatible with Debian-based Linux distributions
     echo
     exit 1
 fi
 
 if [ $EUID -eq 0 ]; then
-    echo Sorry, you must not be a superuser to install and run Solar Core
+    echo Sorry, you must not be a superuser to install and run Helios Core
     echo
     exit 1
 fi
 
 if [[ "$HOME" =~ \ |\' ]]; then
-    echo Sorry, your home directory must not contain spaces to install Solar Core
+    echo Sorry, your home directory must not contain spaces to install Helios Core
     echo
     exit 1
 fi
 
 tput civis
-echo Thanks for choosing to install Solar Core! Preparing the setup procedure...
+echo Thanks for choosing to install Helios Core! Preparing the setup procedure...
 echo
 
-SOLAR_OLD_PATH=$PATH
-SOLAR_OLD_CFLAGS=$CFLAGS
-SOLAR_OLD_LDFLAGS=$LDFLAGS
-SOLAR_OLD_PERL5LIB=$PERL5LIB
-SOLAR_OLD_GIT_EXEC_PATH=$GIT_EXEC_PATH
-SOLAR_OLD_GIT_TEMPLATE_DIR=$GIT_TEMPLATE_DIR
+HELIOS_OLD_PATH=$PATH
+HELIOS_OLD_CFLAGS=$CFLAGS
+HELIOS_OLD_LDFLAGS=$LDFLAGS
+HELIOS_OLD_PERL5LIB=$PERL5LIB
+HELIOS_OLD_GIT_EXEC_PATH=$GIT_EXEC_PATH
+HELIOS_OLD_GIT_TEMPLATE_DIR=$GIT_TEMPLATE_DIR
 
-RC='SOLAR_CORE_TOKEN=solar
-SOLAR_CORE="$SOLAR_CORE_TOKEN"-core
-SOLAR_CORE_PATH="$HOME"/"$SOLAR_CORE"
-SOLAR_DATA_PATH="$HOME"/."$SOLAR_CORE_TOKEN"
-SOLAR_TEMP_PATH="$SOLAR_DATA_PATH"/tmp
-PATH="$SOLAR_DATA_PATH"/usr/bin:"$SOLAR_DATA_PATH"/bin:"$SOLAR_DATA_PATH"/sbin:"$SOLAR_DATA_PATH"/usr/share:"$SOLAR_DATA_PATH"/usr/lib:"$SOLAR_DATA_PATH"/.pnpm/bin:/bin:/usr/bin
-CFLAGS="--sysroot=\"$SOLAR_DATA_PATH\""
-LDFLAGS="--sysroot=\"$SOLAR_DATA_PATH\""
-PERL5LIB="$SOLAR_DATA_PATH"/usr/share/perl5
-GIT_EXEC_PATH="$SOLAR_DATA_PATH"/usr/lib/git-core
-GIT_TEMPLATE_DIR="$SOLAR_DATA_PATH"/usr/share/git-core/templates'
+RC='HELIOS_CORE_TOKEN=helios
+HELIOS_CORE="$HELIOS_CORE_TOKEN"-core
+HELIOS_CORE_PATH="$HOME"/"$HELIOS_CORE"
+HELIOS_DATA_PATH="$HOME"/."$HELIOS_CORE_TOKEN"
+HELIOS_TEMP_PATH="$HELIOS_DATA_PATH"/tmp
+PATH="$HELIOS_DATA_PATH"/usr/bin:"$HELIOS_DATA_PATH"/bin:"$HELIOS_DATA_PATH"/sbin:"$HELIOS_DATA_PATH"/usr/share:"$HELIOS_DATA_PATH"/usr/lib:"$HELIOS_DATA_PATH"/.pnpm/bin:/bin:/usr/bin
+CFLAGS="--sysroot=\"$HELIOS_DATA_PATH\""
+LDFLAGS="--sysroot=\"$HELIOS_DATA_PATH\""
+PERL5LIB="$HELIOS_DATA_PATH"/usr/share/perl5
+GIT_EXEC_PATH="$HELIOS_DATA_PATH"/usr/lib/git-core
+GIT_TEMPLATE_DIR="$HELIOS_DATA_PATH"/usr/share/git-core/templates'
 
 eval "$RC"
 
 trap sigtrap INT
 
-mkdir -p "$SOLAR_DATA_PATH" "$SOLAR_DATA_PATH"/etc "$SOLAR_TEMP_PATH"/cache "$SOLAR_TEMP_PATH"/state/archives/partial "$SOLAR_TEMP_PATH"/state/lists/partial
+mkdir -p "$HELIOS_DATA_PATH" "$HELIOS_DATA_PATH"/etc "$HELIOS_TEMP_PATH"/cache "$HELIOS_TEMP_PATH"/state/archives/partial "$HELIOS_TEMP_PATH"/state/lists/partial
 
-echo "$(source <(echo "echo \"$RC\""))" > "$SOLAR_DATA_PATH"/.env &&
+echo "$(source <(echo "echo \"$RC\""))" > "$HELIOS_DATA_PATH"/.env &&
 
-if [ ! -f ""$SOLAR_DATA_PATH"/bin/node" ]; then
-    wget -qO "$SOLAR_TEMP_PATH"/n https://raw.githubusercontent.com/tj/n/master/bin/n
-    N_PREFIX="$SOLAR_DATA_PATH" /bin/bash "$SOLAR_TEMP_PATH"/n 16 >/dev/null 2>/dev/null
+if [ ! -f ""$HELIOS_DATA_PATH"/bin/node" ]; then
+    wget -qO "$HELIOS_TEMP_PATH"/n https://raw.githubusercontent.com/tj/n/master/bin/n
+    N_PREFIX="$HELIOS_DATA_PATH" /bin/bash "$HELIOS_TEMP_PATH"/n 16 >/dev/null 2>/dev/null
 fi
 
-rm -rf "$SOLAR_DATA_PATH"/.pnpm
-mkdir -p "$SOLAR_DATA_PATH"/.pnpm/bin
+rm -rf "$HELIOS_DATA_PATH"/.pnpm
+mkdir -p "$HELIOS_DATA_PATH"/.pnpm/bin
 
-echo "prefix=""$SOLAR_DATA_PATH""/.pnpm
-global-dir=""$SOLAR_DATA_PATH""/.pnpm
-global-bin-dir=""$SOLAR_DATA_PATH""/.pnpm/bin
-store-dir=""$SOLAR_DATA_PATH""/.pnpm/store" > "$SOLAR_DATA_PATH"/lib/node_modules/npm/npmrc
-ln -sf "$SOLAR_DATA_PATH"/lib/node_modules/npm/npmrc "$SOLAR_DATA_PATH"/etc/npmrc
+echo "prefix=""$HELIOS_DATA_PATH""/.pnpm
+global-dir=""$HELIOS_DATA_PATH""/.pnpm
+global-bin-dir=""$HELIOS_DATA_PATH""/.pnpm/bin
+store-dir=""$HELIOS_DATA_PATH""/.pnpm/store" > "$HELIOS_DATA_PATH"/lib/node_modules/npm/npmrc
+ln -sf "$HELIOS_DATA_PATH"/lib/node_modules/npm/npmrc "$HELIOS_DATA_PATH"/etc/npmrc
 
 npm install -g cli-cursor@3.1.0 delay@5.0.0 env-paths@2.2.1 kleur@4.1.4 @alessiodf/listr pnpm prompts@2.4.2 >/dev/null 2>/dev/null
 
-cat << 'EOF' > "$SOLAR_TEMP_PATH"/install.js
+cat << 'EOF' > "$HELIOS_TEMP_PATH"/install.js
 const Listr = require("@alessiodf/listr");
 const { spawn, spawnSync } = require("child_process");
 const cliCursor = require("cli-cursor");
@@ -110,7 +112,7 @@ const { homedir } = require("os");
 const { white } = require("kleur");
 const prompts = require("prompts");
 
-const envLines = readFileSync(`${process.env.SOLAR_DATA_PATH}/.env`).toString().split("\n");
+const envLines = readFileSync(`${process.env.HELIOS_DATA_PATH}/.env`).toString().split("\n");
 const envVars = {};
 
 for (const line of envLines) {
@@ -270,70 +272,26 @@ function route(data, stderr) {
     }
 }
 
-async function addPlugin(plugin) {
-    return new Promise(async (resolve, reject) => {
-        const cli = spawn(plugin.command, { shell: true });
-        cli.stdout.on("data", (data) => route(data));
-        cli.stderr.on("data", (data) => route(data, true));
-        cli.on("close", (code) => {
-            if (code === 0) {
-                resolve();
-            } else {
-                reject(new Error(`The process failed with error code ${code}`));
-            }
-        });
-    });
-}
-
-async function addPlugins() {
-    const listr = new Listr();
-    const plugins = [
-        {
-            package: "@alessiodf/rocket-boot",
-            command:
-                `"$SOLAR_DATA_PATH"/bin/node "$SOLAR_CORE_PATH"/packages/core/bin/run plugin:install @alessiodf/rocket-boot --network=${network} --token="$SOLAR_CORE_TOKEN" && "$SOLAR_DATA_PATH"/bin/node "$SOLAR_CORE_PATH"/packages/core/bin/run rocket:enable --force --network=${network} --token="$SOLAR_CORE_TOKEN"`,
-        },
-        {
-            package: "@alessiodf/round-monitor",
-            command:
-                `"$SOLAR_DATA_PATH"/bin/node "$SOLAR_CORE_PATH"/packages/core/bin/run plugin:install @alessiodf/round-monitor --network=${network} --token="$SOLAR_CORE_TOKEN" && "$SOLAR_DATA_PATH"/bin/node "$SOLAR_CORE_PATH"/packages/core/bin/run monitor:enable --disableServer --restartTimeBuffer=45 --force --network=${network} --token="$SOLAR_CORE_TOKEN"`,
-        },
-    ];
-    for (const plugin of plugins) {
-        if (verbose) {
-            await addPlugin(plugin);
-        } else {
-            listr.add([
-                {
-                    title: `Adding ${plugin.package}`,
-                    task: () => addPlugin(plugin),
-                },
-            ]);
-        }
-    }
-    return listr;
-}
-
 async function core() {
     return new Promise((resolve, reject) => {
         const pnpm = spawn(
             `
-                . "${process.env.SOLAR_DATA_PATH}"/.env &&
+                . "${process.env.HELIOS_DATA_PATH}"/.env &&
                 npm -g install pnpm &&
                 pnpm -g install pm2 &&
                 pm2 install pm2-logrotate &&
                 pm2 set pm2-logrotate:max_size 500M &&
                 pm2 set pm2-logrotate:compress true &&
                 pm2 set pm2-logrotate:retain 7 &&
-                ln -sf "$SOLAR_DATA_PATH"/bin/node "$SOLAR_DATA_PATH"/.pnpm/bin/node &&
+                ln -sf "$HELIOS_DATA_PATH"/bin/node "$HELIOS_DATA_PATH"/.pnpm/bin/node &&
                 rm -rf /tmp/pm2-logrotate &&
-                ((crontab -l; echo "@reboot /bin/bash -lc \\"source "$SOLAR_DATA_PATH"/.env; "$SOLAR_DATA_PATH"/.pnpm/bin/pm2 resurrect\\"") | sort -u - | crontab - 2>/dev/null) || true &&
-                cd "$SOLAR_CORE_PATH" &&
+                ((crontab -l; echo "@reboot /bin/bash -lc \\"source "$HELIOS_DATA_PATH"/.env; "$HELIOS_DATA_PATH"/.pnpm/bin/pm2 resurrect\\"") | sort -u - | crontab - 2>/dev/null) || true &&
+                cd "$HELIOS_CORE_PATH" &&
                 CFLAGS="$CFLAGS" CPATH="$CPATH" LDFLAGS="$LDFLAGS" LD_LIBRARY_PATH="$LD_LIBRARY_PATH" pnpm install ${pnpmFlags} &&
                 pnpm build ${pnpmFlags} &&
-                RC=POSTGRES_DIR=$(find "$SOLAR_DATA_PATH" -regex ".*/usr/lib/postgresql/[0-9]+") &&
-                echo "$RC" >> "$SOLAR_DATA_PATH"/.env &&
-                sed -i "s@"/usr/lib/postgresql/"@""$SOLAR_DATA_PATH"/usr/lib/postgresql/"@g" "$SOLAR_DATA_PATH"/usr/share/perl5/PgCommon.pm
+                RC=POSTGRES_DIR=$(find "$HELIOS_DATA_PATH" -regex ".*/usr/lib/postgresql/[0-9]+") &&
+                echo "$RC" >> "$HELIOS_DATA_PATH"/.env &&
+                sed -i "s@"/usr/lib/postgresql/"@""$HELIOS_DATA_PATH"/usr/lib/postgresql/"@g" "$HELIOS_DATA_PATH"/usr/share/perl5/PgCommon.pm
             `,
             { shell: true },
         );
@@ -356,11 +314,11 @@ async function core() {
     });
 }
 
-async function downloadCore(version) {
+async function downloadCore() {
     return new Promise((resolve, reject) => {
         const architecture = spawnSync(
             `
-                . "${process.env.SOLAR_DATA_PATH}"/.env &&
+                . "${process.env.HELIOS_DATA_PATH}"/.env &&
                 gcc -dumpmachine
             `,
             { shell: true },
@@ -369,20 +327,18 @@ async function downloadCore(version) {
             .trim();
         const git = spawn(
             `
-                . "${process.env.SOLAR_DATA_PATH}"/.env &&
-                RC=CPATH="$SOLAR_DATA_PATH"/usr/include:"$SOLAR_DATA_PATH"/usr/include/${architecture} &&
-                echo "$RC" >> "$SOLAR_DATA_PATH"/.env &&
-                RC=LD_LIBRARY_PATH="$SOLAR_DATA_PATH"/usr/lib/${architecture} &&
+                . "${process.env.HELIOS_DATA_PATH}"/.env &&
+                RC=CPATH="$HELIOS_DATA_PATH"/usr/include:"$HELIOS_DATA_PATH"/usr/include/${architecture} &&
+                echo "$RC" >> "$HELIOS_DATA_PATH"/.env &&
+                RC=LD_LIBRARY_PATH="$HELIOS_DATA_PATH"/usr/lib/${architecture} &&
                 eval "$RC" &&
-                echo "$RC" >> "$SOLAR_DATA_PATH"/.env &&
-                ln -sf "$SOLAR_DATA_PATH"/usr/bin/gcc "$SOLAR_DATA_PATH"/usr/bin/cc &&
-                ln -sf /usr/lib/${architecture}/libgcc_s.* "$SOLAR_DATA_PATH"/usr/lib/${architecture}/ &&
-                (grep -rl include_next "$SOLAR_DATA_PATH"/usr/include/c++/ | xargs sed -i "s/include_next/include/g" 2>/dev/null; true) &&
-                rm -rf "$SOLAR_CORE_PATH" &&
+                echo "$RC" >> "$HELIOS_DATA_PATH"/.env &&
+                ln -sf "$HELIOS_DATA_PATH"/usr/bin/gcc "$HELIOS_DATA_PATH"/usr/bin/cc &&
+                ln -sf /usr/lib/${architecture}/libgcc_s.* "$HELIOS_DATA_PATH"/usr/lib/${architecture}/ &&
+                (grep -rl include_next "$HELIOS_DATA_PATH"/usr/include/c++/ | xargs sed -i "s/include_next/include/g" 2>/dev/null; true) &&
+                rm -rf "$HELIOS_CORE_PATH" &&
                 cd "$HOME" &&
-                LD_LIBRARY_PATH="$LD_LIBRARY_PATH" git clone "https://github.com/solar-network/core.git" "$SOLAR_CORE_PATH" --progress &&
-                cd "$SOLAR_CORE_PATH" &&
-                git checkout tags/${version}
+                LD_LIBRARY_PATH="$LD_LIBRARY_PATH" git clone "https://github.com/e-m-s-y/helios-core" -b helios "$HELIOS_CORE_PATH" --progress
             `,
             { shell: true },
         );
@@ -451,8 +407,8 @@ async function downloadOSDependencies() {
 
         const apt = spawn(
             `
-                . "${process.env.SOLAR_DATA_PATH}"/.env &&
-                APT_PARAMS="-o debug::nolocking=true -o dir::cache="$SOLAR_TEMP_PATH"/cache -o dir::state="$SOLAR_TEMP_PATH/state"" &&
+                . "${process.env.HELIOS_DATA_PATH}"/.env &&
+                APT_PARAMS="-o debug::nolocking=true -o dir::cache="$HELIOS_TEMP_PATH"/cache -o dir::state="$HELIOS_TEMP_PATH/state"" &&
                 apt-get $APT_PARAMS update &&
                 apt-get $APT_PARAMS -y -d install --reinstall ${enumerateDependencies()}
             `,
@@ -472,7 +428,7 @@ async function downloadOSDependencies() {
 
 async function installOSDependencies() {
     return await new Promise(async (resolve, reject) => {
-        const dir = `${process.env.SOLAR_TEMP_PATH}/cache/archives`;
+        const dir = `${process.env.HELIOS_TEMP_PATH}/cache/archives`;
         const packages = readdirSync(dir)
             .filter((pkg) => pkg.endsWith(".deb") && statSync(`${dir}/${pkg}`).isFile())
             .map((pkg) => `${dir}/${pkg}`);
@@ -498,8 +454,8 @@ async function installOSDependency(pkg) {
     return await new Promise((resolve, reject) => {
         const dpkg = spawn(
             `
-                . "${process.env.SOLAR_DATA_PATH}"/.env &&
-                dpkg -x ${pkg} "${process.env.SOLAR_DATA_PATH}"
+                . "${process.env.HELIOS_DATA_PATH}"/.env &&
+                dpkg -x ${pkg} "${process.env.HELIOS_DATA_PATH}"
             `,
             { shell: true },
         );
@@ -520,8 +476,8 @@ async function saveConfiguration() {
     return new Promise((resolve, reject) => {
         const config = spawn(
             `
-                cd "$SOLAR_CORE_PATH" &&
-                "$SOLAR_DATA_PATH"/bin/node packages/core/bin/run config:publish --network=${network}
+                cd "$HELIOS_CORE_PATH" &&
+                "$HELIOS_DATA_PATH"/bin/node packages/core/bin/run config:publish --network=${network}
             `,
             { shell: true },
         );
@@ -539,11 +495,11 @@ async function saveConfiguration() {
 
 async function setUpDatabase() {
     return new Promise((resolve, reject) => {
-        const { data } = envPaths(process.env.SOLAR_CORE_TOKEN, { suffix: "core" });
+        const { data } = envPaths(process.env.HELIOS_CORE_TOKEN, { suffix: "core" });
         const psql = spawn(
             `
-                cd "$SOLAR_CORE_PATH" &&
-                "$SOLAR_DATA_PATH"/bin/node packages/core/bin/run database:create --network=${network}
+                cd "$HELIOS_CORE_PATH" &&
+                "$HELIOS_DATA_PATH"/bin/node packages/core/bin/run database:create --network=${network}
             `,
             { shell: true },
         );
@@ -561,16 +517,16 @@ async function setUpDatabase() {
 
 function skipConfiguration() {
     const home = homedir();
-    const { config } = envPaths(process.env.SOLAR_CORE_TOKEN, { suffix: "core" });
+    const { config } = envPaths(process.env.HELIOS_CORE_TOKEN, { suffix: "core" });
     return existsSync(`${config}/${network}`);
 }
 
 function skipDatabase() {
     const home = homedir();
-    const { data } = envPaths(process.env.SOLAR_CORE_TOKEN, { suffix: "core" });
+    const { data } = envPaths(process.env.HELIOS_CORE_TOKEN, { suffix: "core" });
     if (existsSync(`${data}/${network}/database/postgresql.conf`)) {
         const config = readFileSync(`${data}/${network}/database/postgresql.conf`).toString();
-        return config.includes(`# ${process.env.SOLAR_CORE_TOKEN}`);
+        return config.includes(`# ${process.env.HELIOS_CORE_TOKEN}`);
     }
 }
 
@@ -650,31 +606,13 @@ async function start() {
             console.log();
         }
 
-        console.log(`Installing Solar Core for ${network}. This process may take a few minutes`);
+        console.log(`Installing Helios Core for ${network}. This process may take a few minutes`);
         cliCursor.hide();
 
         let regex = /^\d+.\d+.\d+$/;
 
         if (network === "testnet") {
             regex = /^\d+.\d+.\d+-next.\d+$/;
-        }
-
-        let version;
-
-        try {
-            const tags = JSON.parse(
-                spawnSync("wget -qO- https://api.github.com/repos/solar-network/core/git/refs/tags", { shell: true })
-                    .stdout,
-            );
-            version = Object.values(tags.map((tag) => tag.ref.substring(10)))
-                .filter((tag) => regex.test(tag))
-                .reverse()[0];
-        } catch {
-            throw new Error("There was a problem connecting to GitHub. Please try again later");
-        }
-
-        if (!version) {
-            throw new Error(`It looks like ${network} is not available right now. Please try again later`);
         }
 
         console.log();
@@ -696,8 +634,8 @@ async function start() {
                 },
             },
             {
-                title: `Downloading Core ${version}`,
-                task: () => downloadCore(version),
+                title: `Downloading Core`,
+                task: () => downloadCore(),
             },
             {
                 title: "Downloading Core dependencies",
@@ -714,17 +652,13 @@ async function start() {
                 },
             },
             {
-                title: `Building Core ${version}`,
+                title: `Building Core`,
                 task: () => packagesListr,
             },
             {
                 title: "Saving configuration",
                 skip: () => skipConfiguration(),
                 task: () => saveConfiguration(),
-            },
-            {
-                title: "Adding plugins",
-                task: () => addPlugins(),
             },
             {
                 title: "Setting up database",
@@ -738,12 +672,11 @@ async function start() {
         } else {
             await downloadOSDependencies();
             await installOSDependencies();
-            await downloadCore(version);
+            await downloadCore();
             await core();
             if (!skipConfiguration()) {
                 await saveConfiguration();
             }
-            await addPlugins();
             if (!skipDatabase()) {
                 await setUpDatabase();
             }
@@ -752,22 +685,22 @@ async function start() {
         const home = homedir();
 
         const rc =
-            `alias ${process.env.SOLAR_CORE_TOKEN}="${process.env.SOLAR_DATA_PATH}/bin/node ${process.env.SOLAR_CORE_PATH}/packages/core/bin/run $@ --token=${process.env.SOLAR_CORE_TOKEN}"\n` +
-            `alias pm2="${process.env.SOLAR_DATA_PATH}/.pnpm/bin/pm2"`;
-        writeFileSync(`${home}/.${process.env.SOLAR_CORE_TOKEN}rc`, rc);
+            `alias ${process.env.HELIOS_CORE_TOKEN}="${process.env.HELIOS_DATA_PATH}/bin/node ${process.env.HELIOS_CORE_PATH}/packages/core/bin/run $@ --token=${process.env.HELIOS_CORE_TOKEN}"\n` +
+            `alias pm2="${process.env.HELIOS_DATA_PATH}/.pnpm/bin/pm2"`;
+        writeFileSync(`${home}/.${process.env.HELIOS_CORE_TOKEN}rc`, rc);
 
         for (const file of [".bashrc", ".kshrc", ".zshrc"]) {
             const rcFile = `${home}/${file}`;
             if (existsSync(rcFile)) {
                 const data = readFileSync(rcFile).toString();
-                if (!data.includes(`.${process.env.SOLAR_CORE_TOKEN}rc`)) {
-                    appendFileSync(rcFile, `\n. "$HOME"/".${process.env.SOLAR_CORE_TOKEN}rc"\n`);
+                if (!data.includes(`.${process.env.HELIOS_CORE_TOKEN}rc`)) {
+                    appendFileSync(rcFile, `\n. "$HOME"/".${process.env.HELIOS_CORE_TOKEN}rc"\n`);
                 }
             }
         }
         console.log();
         console.log(
-            `Solar Core has been successfully installed! To get started, type \x1b[1m${process.env.SOLAR_CORE_TOKEN}\x1b[22m`,
+            `Helios Core has been successfully installed! To get started, type \x1b[1m${process.env.HELIOS_CORE_TOKEN}\x1b[22m`,
         );
     } catch (error) {
         await raiseError(error);
@@ -777,10 +710,10 @@ async function start() {
 start();
 EOF
 
-SOLAR_DATA_PATH="$SOLAR_DATA_PATH" SOLAR_CORE_TOKEN="$SOLAR_CORE_TOKEN" SOLAR_TEMP_PATH="$SOLAR_TEMP_PATH" NODE_PATH="$SOLAR_DATA_PATH"/.pnpm/lib/node_modules ARGV="$@" /bin/bash -c '
-"$SOLAR_DATA_PATH"/bin/node "$SOLAR_TEMP_PATH"/install.js $ARGV
+HELIOS_DATA_PATH="$HELIOS_DATA_PATH" HELIOS_CORE_TOKEN="$HELIOS_CORE_TOKEN" HELIOS_TEMP_PATH="$HELIOS_TEMP_PATH" NODE_PATH="$HELIOS_DATA_PATH"/.pnpm/lib/node_modules ARGV="$@" /bin/bash -c '
+"$HELIOS_DATA_PATH"/bin/node "$HELIOS_TEMP_PATH"/install.js $ARGV
 ERRORLEVEL=$?
-rm -rf "$SOLAR_TEMP_PATH"
+rm -rf "$HELIOS_TEMP_PATH"
 exit $ERRORLEVEL'
 
 ERRORLEVEL=$?
