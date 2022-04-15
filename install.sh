@@ -477,7 +477,7 @@ async function saveConfiguration() {
         const config = spawn(
             `
                 cd "$HELIOS_CORE_PATH" &&
-                "$HELIOS_DATA_PATH"/bin/node packages/core/bin/run config:publish --network=${network}
+                "$HELIOS_DATA_PATH"/bin/node packages/core/bin/run config:publish --network=${network} --token=helios
             `,
             { shell: true },
         );
@@ -499,7 +499,7 @@ async function setUpDatabase() {
         const psql = spawn(
             `
                 cd "$HELIOS_CORE_PATH" &&
-                "$HELIOS_DATA_PATH"/bin/node packages/core/bin/run database:create --network=${network}
+                "$HELIOS_DATA_PATH"/bin/node packages/core/bin/run database:create --network=${network} --token=helios
             `,
             { shell: true },
         );
