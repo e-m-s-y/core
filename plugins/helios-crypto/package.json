@@ -1,0 +1,21 @@
+{
+    "name": "@foly/helios-crypto",
+    "version": "1.0.0",
+    "description": "Custom transactions for the Helios blockchain",
+    "license": "CC BY-ND 4.0",
+    "contributors": [
+        "emsy <https://github.com/e-m-s-y>"
+    ],
+    "files": [
+        "dist"
+    ],
+    "main": "dist/index",
+    "scripts": {
+        "build": "pnpm clean && pnpm compile",
+        "clean": "rimraf dist",
+        "compile": "../../node_modules/typescript/bin/tsc"
+    },
+    "devDependencies": {
+        "@solar-network/crypto": "workspace:*"
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "name": "@foly/helios-transactions",
+    "version": "1.0.0",
+    "description": "Custom transactions for the Helios blockchain",
+    "license": "CC BY-ND 4.0",
+    "contributors": [
+        "emsy <https://github.com/e-m-s-y>"
+    ],
+    "files": [
+        "dist"
+    ],
+    "main": "dist/index",
+    "scripts": {
+        "build": "pnpm clean && pnpm compile",
+        "clean": "rimraf dist",
+        "compile": "../../node_modules/typescript/bin/tsc"
+    },
+    "dependencies": {
+        "@foly/helios-crypto": "workspace:*",
+        "@solar-network/core-kernel": "workspace:*",
+        "@solar-network/core-transactions": "workspace:*",
+        "@solar-network/crypto": "workspace:*"
+    }
+}

@@ -22,6 +22,9 @@
                 }
             },
             {
+                "package": "@foly/helios-transactions"
+            },
+            {
                 "package": "@solar-network/core-p2p",
                 "options": {
                     "minimumNetworkReach": 1
@@ -77,6 +80,9 @@
                 }
             },
             {
+                "package": "@foly/helios-transactions"
+            },
+            {
                 "package": "@solar-network/core-p2p",
                 "options": {
                     "minimumNetworkReach": 1
@@ -101,6 +107,63 @@
             },
             {
                 "package": "@solar-network/core-webhooks"
+            },
+            {
+                "package": "@foly/socket-event-forwarder",
+                "options": {
+                    "enabled": false,
+                    "port": 3333,
+                    "events": [
+                        "shutdown",
+                        "block.applied",
+                        "block.disregarded",
+                        "block.forged",
+                        "block.received",
+                        "block.reverted",
+                        "delegate.registered",
+                        "delegate.resigned",
+                        "forger.failed",
+                        "forger.missing",
+                        "forger.started",
+                        "internal.milestone.changed",
+                        "peer.added",
+                        "peer.removed",
+                        "round.applied",
+                        "round.created",
+                        "round.missed",
+                        "snapshot.start",
+                        "snapshot.progress",
+                        "snapshot.complete",
+                        "stateBuilder.finished",
+                        "state.starting",
+                        "state.started",
+                        "transaction.applied",
+                        "transaction.expired",
+                        "transaction.forged",
+                        "transaction.reverted",
+                        "wallet.vote",
+                        "wallet.unvote",
+                        "wallet.logged.in",
+                        "wallet.logged.out",
+                        "character.registered"
+                    ],
+                    "confirmations": [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ],
+                    "customEvents": [
+                        "transaction.confirmed",
+                        "systeminformation",
+                        "network.latency",
+                        "blockheight.current"
+                    ],
+                    "systeminformationInterval": 5000,
+                    "networkLatencyInterval": 10000,
+                    "blockheightCurrentInterval": 5000
+                }
             }
         ]
     },
