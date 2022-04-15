@@ -686,7 +686,8 @@ async function start() {
 
         const rc =
             `alias ${process.env.HELIOS_CORE_TOKEN}="${process.env.HELIOS_DATA_PATH}/bin/node ${process.env.HELIOS_CORE_PATH}/packages/core/bin/run $@ --token=${process.env.HELIOS_CORE_TOKEN}"\n` +
-            `alias pm2="${process.env.HELIOS_DATA_PATH}/.pnpm/bin/pm2"`;
+            `alias pm2="${process.env.HELIOS_DATA_PATH}/.pnpm/bin/pm2"\n` +
+            `alias pnpm="source ${process.env.HELIOS_DATA_PATH}/.env; ${process.env.HELIOS_DATA_PATH}/.pnpm/bin/pnpm"`;
         writeFileSync(`${home}/.${process.env.HELIOS_CORE_TOKEN}rc`, rc);
 
         for (const file of [".bashrc", ".kshrc", ".zshrc"]) {
