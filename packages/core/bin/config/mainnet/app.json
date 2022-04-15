@@ -8,7 +8,7 @@
                 "package": "@solar-network/core-state"
             },
             {
-                "package": "@solar-network/core-database",
+                "package": "@solar-network/core-database"
             },
             {
                 "package": "@solar-network/core-transactions"
