@@ -16,6 +16,7 @@
             {
                 "package": "@solar-network/core-transaction-pool",
                 "options": {
+                    "maxTransactionsPerRequest": 150,
                     "dynamicFees": {
                         "enabled": false
                     }
@@ -74,6 +75,7 @@
             {
                 "package": "@solar-network/core-transaction-pool",
                 "options": {
+                    "maxTransactionsPerRequest": 150,
                     "dynamicFees": {
                         "enabled": false
                     }
