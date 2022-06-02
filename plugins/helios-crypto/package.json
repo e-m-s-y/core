@@ -1,6 +1,6 @@
 {
     "name": "@foly/helios-crypto",
-    "version": "1.0.0",
+    "version": "3.2.1-next.1",
     "description": "Custom transactions for the Helios blockchain",
     "license": "CC BY-ND 4.0",
     "contributors": [

@@ -57,10 +57,16 @@ export class AuthenticationTransactionHandler extends HeliosTransactionHandler {
         KernelUtils.assert.defined<string>(transaction.data.recipientId);
         KernelUtils.assert.defined<boolean>(transaction.data.asset?.isLoggedIn);
 
-        if (transaction.data.asset.isLoggedIn) {
-            emitter.dispatch(Events.WalletLoggedIn, transaction.data);
-        } else if (!transaction.data.asset.isLoggedIn) {
-            emitter.dispatch(Events.WalletLoggedOut, transaction.data);
+        if (transaction.data && transaction.data.asset) {
+            const recipient = this.walletRepository.findByAddress(transaction.data.recipientId);
+
+            transaction.data.asset = recipient.getAttributes();
+
+            if (transaction.data.asset.isLoggedIn) {
+                emitter.dispatch(Events.WalletLoggedIn, transaction.data);
+            } else if (!transaction.data.asset.isLoggedIn) {
+                emitter.dispatch(Events.WalletLoggedOut, transaction.data);
+            }
         }
     }
 
